@@ -1,36 +1,57 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Distributed Cloud Computing Learning Project
+
+A hands-on project to learn distributed cloud computing using **Terraform**, **Kubernetes**, **Docker**, **GitHub Actions**, and **Next.js**.
+
+---
+
+## Project Overview
+
+This project serves as a practical learning path for modern cloud infrastructure and DevOps practices. Each phase builds upon the previous, culminating in a fully distributed, containerized application.
+
+---
+
+## 1. Docker: The "Containerize Anything" Project
+
+- Implemented two different Dockerfiles for different deployment targets (Dockerfle.dev and Dockerfile.prod)
+- Utilized volumes to mount local source code into the DEV container to allow hot-reloading
+
+## 2. GitHub Actions: The "Automatic Gatekeeper" Project
+
+
+
+## 3. Terraform: The "Clickless Cloud" Project
+
+
+
+## 4. Kubernetes (K8s): The "Orchestrator" Project
+
+
+
+## 5. Distributed Computing: The "Stateful vs. Stateless" Project
+
+
+
+## Tech Stack
+
+| Technology | Purpose |
+|------------|---------|
+| Next.js | Frontend application framework |
+| Docker | Containerization |
+| GitHub Actions | CI/CD pipeline |
+| Terraform | Infrastructure as Code |
+| Kubernetes | Container orchestration |
+| Redis | Stateful data store |
+
+---
 
 ## Getting Started
 
-First, run the development server:
+### Run DEV container
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+docker build -t hello-world-pe:latest-dev -f Dockerfile.dev .
+docker run -v $(pwd):/app -v /app/node_modules -p 3000:3000 hello-world-pe:latest-dev
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Run PROD container
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+docker build -t hello-world-pe:latest-prod -f Dockerfile.prod .
+docker run -p 3000:3000 hello-world-pe:latest-prod
