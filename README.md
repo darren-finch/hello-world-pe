@@ -14,44 +14,31 @@ This project serves as a practical learning path for modern cloud infrastructure
 
 - Implemented two different Dockerfiles for different deployment targets (Dockerfle.dev and Dockerfile.prod)
 - Utilized volumes to mount local source code into the DEV container to allow hot-reloading
+- Implemented .devcontainer and .editorconfig to commoditize the developer environment
 
 ## 2. GitHub Actions: The "Automatic Gatekeeper" Project
 
-
-
 ## 3. Terraform: The "Clickless Cloud" Project
-
-
 
 ## 4. Kubernetes (K8s): The "Orchestrator" Project
 
-
-
 ## 5. Distributed Computing: The "Stateful vs. Stateless" Project
-
-
 
 ## Tech Stack
 
-| Technology | Purpose |
-|------------|---------|
-| Next.js | Frontend application framework |
-| Docker | Containerization |
-| GitHub Actions | CI/CD pipeline |
-| Terraform | Infrastructure as Code |
-| Kubernetes | Container orchestration |
-| Redis | Stateful data store |
+| Technology     | Purpose                        |
+| -------------- | ------------------------------ |
+| Next.js        | Frontend application framework |
+| Docker         | Containerization               |
+| GitHub Actions | CI/CD pipeline                 |
+| Terraform      | Infrastructure as Code         |
+| Kubernetes     | Container orchestration        |
+| Redis          | Stateful data store            |
 
 ---
 
 ## Getting Started
 
-### Run DEV container
+### Run application inside DEV container
 
-docker build -t hello-world-pe:latest-dev -f Dockerfile.dev .
-docker run -v $(pwd):/app -v /app/node_modules -p 3000:3000 hello-world-pe:latest-dev
-
-### Run PROD container
-
-docker build -t hello-world-pe:latest-prod -f Dockerfile.prod .
-docker run -p 3000:3000 hello-world-pe:latest-prod
+npm run dev

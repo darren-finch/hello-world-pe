@@ -1,0 +1,26 @@
+{
+    "name": "hello-world-pe",
+    "build": {
+        "dockerfile": "../Dockerfile.dev",
+        "context": ".."
+    },
+    "forwardPorts": [
+        3000
+    ],
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-azuretools.vscode-docker",
+                "hashicorp.terraform",
+                "ms-kubernetes-tools.vscode-kubernetes-tools",
+                "github.vscode-github-actions",
+                "redhat.vscode-yaml",
+                "dbaeumer.vscode-eslint",
+                "esbenp.prettier-vscode",
+                "eamodio.gitlens",
+                "google.gemini-cli-vscode-ide-companion"
+            ]
+        }
+    },
+    "postCreateCommand": "npm install && chsh -s /bin/bash"
+}
