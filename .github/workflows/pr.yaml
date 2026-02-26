@@ -1,0 +1,28 @@
+on:
+    pull_request:
+        branches: [main]
+        types: [opened, synchronize, reopened]
+
+jobs:
+    build:
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout repository code
+              uses: actions/checkout@v4
+
+            - name: Install Dependencies
+              run: npm install
+
+    lint-and-test:
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout repository code
+              uses: actions/checkout@v4
+
+            - name: Run Linter
+              run: npm lint
+
+            - name: Run Tests
+              run: npm test
