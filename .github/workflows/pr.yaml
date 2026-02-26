@@ -4,7 +4,7 @@ on:
         types: [opened, synchronize, reopened]
 
 jobs:
-    build:
+    lint-and-test:
         runs-on: ubuntu-latest
 
         steps:
@@ -14,15 +14,8 @@ jobs:
             - name: Install Dependencies
               run: npm install
 
-    lint-and-test:
-        runs-on: ubuntu-latest
-
-        steps:
-            - name: Checkout repository code
-              uses: actions/checkout@v4
-
             - name: Run Linter
-              run: npm lint
+              run: npm run lint
 
             - name: Run Tests
-              run: npm test
+              run: npm run test

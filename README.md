@@ -18,6 +18,9 @@ This project serves as a practical learning path for modern cloud infrastructure
 
 ## 2. GitHub Actions: The "Automatic Gatekeeper" Project
 
+- Implemented testing and linting checks on pull request changes
+- Implemented deployment automation to build/deploy Docker image (actual deployment is not there yet, we need Terraform)
+
 ## 3. Terraform: The "Clickless Cloud" Project
 
 ## 4. Kubernetes (K8s): The "Orchestrator" Project
