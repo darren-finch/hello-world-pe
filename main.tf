@@ -93,6 +93,26 @@ resource "oci_core_default_security_list" "default" {
     }
   }
 
+  ingress_security_rules {
+    protocol  = "6" # HTTP
+    source    = "0.0.0.0/0"
+    stateless = false
+    tcp_options {
+      min = 80
+      max = 80
+    }
+  }
+
+  ingress_security_rules {
+    protocol  = "6" # HTTPS
+    source    = "0.0.0.0/0"
+    stateless = false
+    tcp_options {
+      min = 443
+      max = 443
+    }
+  }
+
   egress_security_rules {
     protocol    = "all"
     destination = "0.0.0.0/0"
@@ -138,6 +158,34 @@ resource "oci_core_network_security_group_security_rule" "allow_all_egress" {
   protocol                  = "all"
   destination               = "0.0.0.0/0"
   destination_type          = "CIDR_BLOCK"
+}
+
+resource "oci_core_network_security_group_security_rule" "allow_http" {
+  network_security_group_id = oci_core_network_security_group.vm_nsg.id
+  direction                 = "INGRESS"
+  protocol                  = "6" # TCP
+  source                    = "0.0.0.0/0"
+  source_type               = "CIDR_BLOCK"
+  tcp_options {
+    destination_port_range {
+      min = 80
+      max = 80
+    }
+  }
+}
+
+resource "oci_core_network_security_group_security_rule" "allow_https" {
+  network_security_group_id = oci_core_network_security_group.vm_nsg.id
+  direction                 = "INGRESS"
+  protocol                  = "6" # TCP
+  source                    = "0.0.0.0/0"
+  source_type               = "CIDR_BLOCK"
+  tcp_options {
+    destination_port_range {
+      min = 443
+      max = 443
+    }
+  }
 }
 
 # --- 6. INTERNET GATEWAY & ROUTE TABLE ---
