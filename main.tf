@@ -67,6 +67,7 @@ resource "oci_core_instance" "ampere_vm" {
 
   metadata = {
     ssh_authorized_keys = file(var.ssh_public_key_path)
+    user_data           = base64encode(file("${path.module}/cloud-init.sh"))
   }
 }
 
