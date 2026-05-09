@@ -52,7 +52,7 @@ jobs:
         run: |
           mkdir -p ~/.kube
           echo "$KUBECONFIG_DATA" > ~/.kube/config
-          kubectl apply -f deployment.yaml -f service.yaml -f ingress.yaml
+          kubectl apply -f k8s/
           kubectl set image deployment/hello-world-pe \
             app=$DOCKERHUB_USERNAME/hello-world-pe:${{ github.sha }}
           kubectl rollout status deployment/hello-world-pe
