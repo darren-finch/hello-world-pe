@@ -39,20 +39,20 @@ jobs:
     needs: build
 
     steps:
+      - name: Checkout repository code
+        uses: actions/checkout@v4
+
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v3
 
       - name: Deploy to Production
-        uses: appleboy/ssh-action@v1
         env:
+          KUBECONFIG_DATA: ${{ secrets.KUBECONFIG }}
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-        with:
-          host: ${{ secrets.VM_IP }}
-          username: ubuntu
-          key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
-          envs: DOCKERHUB_USERNAME,GITHUB_SHA
-          script: |
-            docker pull $DOCKERHUB_USERNAME/hello-world-pe:$GITHUB_SHA
-            docker stop hello-world-pe || true
-            docker rm hello-world-pe || true
-            docker run -d --name hello-world-pe --restart=always \
-                -p 80:3000 \
-                $DOCKERHUB_USERNAME/hello-world-pe:$GITHUB_SHA
+        run: |
+          mkdir -p ~/.kube
+          echo "$KUBECONFIG_DATA" > ~/.kube/config
+          kubectl apply -f deployment.yaml -f service.yaml -f ingress.yaml
+          kubectl set image deployment/hello-world-pe \
+            app=$DOCKERHUB_USERNAME/hello-world-pe:${{ github.sha }}
+          kubectl rollout status deployment/hello-world-pe
