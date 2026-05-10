@@ -8,18 +8,6 @@ variable "compartment_id" {}
 variable "ssh_public_key_path" {
   default = "/root/.oci/oci_vm_key.pub" # Path to your local SSH public key
 }
-variable "subnet_id" {
-  description = "The OCID of the public subnet from your VCN Wizard"
-}
-variable "vcn_id" {
-  description = "The OCID of the VCN from your VCN Wizard"
-}
-variable "default_security_list_id" {
-  description = "The OCID of the default security list from your VCN Wizard subnet"
-}
-variable "default_route_table_id" {
-  description = "The OCID of the default route table from your VCN"
-}
 
 # --- 2. PROVIDER CONFIGURATION ---
 terraform {
@@ -39,7 +27,25 @@ provider "oci" {
   region           = var.region
 }
 
-# --- 3. THE "ALWAYS FREE" VM ---
+# --- 3. NETWORKING (VCN + SUBNET) ---
+resource "oci_core_vcn" "main" {
+  compartment_id = var.compartment_id
+  cidr_block     = "10.0.0.0/16"
+  display_name   = "SaaS-Micro-Server-VCN"
+  dns_label      = "saasvcn"
+}
+
+resource "oci_core_subnet" "public" {
+  compartment_id    = var.compartment_id
+  vcn_id            = oci_core_vcn.main.id
+  cidr_block        = "10.0.1.0/24"
+  display_name      = "SaaS-Micro-Server-Subnet"
+  dns_label         = "public"
+  route_table_id    = oci_core_vcn.main.default_route_table_id
+  security_list_ids = [oci_core_vcn.main.default_security_list_id]
+}
+
+# --- 4. THE "ALWAYS FREE" VM ---
 resource "oci_core_instance" "ampere_vm" {
   availability_domain = data.oci_identity_availability_domains.ads.availability_domains[0].name
   compartment_id      = var.compartment_id
@@ -60,8 +66,8 @@ resource "oci_core_instance" "ampere_vm" {
   }
 
   create_vnic_details {
-    subnet_id        = var.subnet_id
-    assign_public_ip = true
+    subnet_id        = oci_core_subnet.public.id
+    assign_public_ip = false
     nsg_ids          = [oci_core_network_security_group.vm_nsg.id]
   }
 
@@ -71,9 +77,9 @@ resource "oci_core_instance" "ampere_vm" {
   }
 }
 
-# --- 4. SUBNET SECURITY LIST ---
+# --- 5. SUBNET SECURITY LIST ---
 resource "oci_core_default_security_list" "default" {
-  manage_default_resource_id = var.default_security_list_id
+  manage_default_resource_id = oci_core_vcn.main.default_security_list_id
 
   ingress_security_rules {
     protocol  = "6" # TCP
@@ -114,6 +120,16 @@ resource "oci_core_default_security_list" "default" {
     }
   }
 
+  ingress_security_rules {
+    protocol  = "6"
+    source    = "0.0.0.0/0"
+    stateless = false
+    tcp_options {
+      min = 6443
+      max = 6443
+    }
+  }
+
   egress_security_rules {
     protocol    = "all"
     destination = "0.0.0.0/0"
@@ -121,10 +137,10 @@ resource "oci_core_default_security_list" "default" {
   }
 }
 
-# --- 5. NETWORK SECURITY GROUP ---
+# --- 6. NETWORK SECURITY GROUP ---
 resource "oci_core_network_security_group" "vm_nsg" {
   compartment_id = var.compartment_id
-  vcn_id         = var.vcn_id
+  vcn_id         = oci_core_vcn.main.id
   display_name   = "SaaS-Micro-Server-NSG"
 }
 
@@ -150,6 +166,20 @@ resource "oci_core_network_security_group_security_rule" "allow_icmp" {
   source_type               = "CIDR_BLOCK"
   icmp_options {
     type = 8 # Echo request
+  }
+}
+
+resource "oci_core_network_security_group_security_rule" "allow_k8s_api" {
+  network_security_group_id = oci_core_network_security_group.vm_nsg.id
+  direction                 = "INGRESS"
+  protocol                  = "6" # TCP
+  source                    = "0.0.0.0/0"
+  source_type               = "CIDR_BLOCK"
+  tcp_options {
+    destination_port_range {
+      min = 6443
+      max = 6443
+    }
   }
 }
 
@@ -189,16 +219,16 @@ resource "oci_core_network_security_group_security_rule" "allow_https" {
   }
 }
 
-# --- 6. INTERNET GATEWAY & ROUTE TABLE ---
+# --- 7. INTERNET GATEWAY & ROUTE TABLE ---
 resource "oci_core_internet_gateway" "igw" {
   compartment_id = var.compartment_id
-  vcn_id         = var.vcn_id
+  vcn_id         = oci_core_vcn.main.id
   display_name   = "SaaS-Micro-Server-IGW"
   enabled        = true
 }
 
 resource "oci_core_default_route_table" "default" {
-  manage_default_resource_id = var.default_route_table_id
+  manage_default_resource_id = oci_core_vcn.main.default_route_table_id
 
   route_rules {
     destination       = "0.0.0.0/0"
@@ -207,11 +237,31 @@ resource "oci_core_default_route_table" "default" {
   }
 }
 
-# --- 7. DATA SOURCES & OUTPUTS ---
+# --- 8. DATA SOURCES & OUTPUTS ---
 data "oci_identity_availability_domains" "ads" {
   compartment_id = var.tenancy_ocid
 }
 
+# Get the VNIC attachment (needed to find the VNIC ID)
+data "oci_core_vnic_attachments" "vm_vnic_attachments" {
+  compartment_id = var.compartment_id
+  instance_id    = oci_core_instance.ampere_vm.id
+}
+
+data "oci_core_private_ips" "vm_private_ip" {
+  vnic_id = data.oci_core_vnic_attachments.vm_vnic_attachments.vnic_attachments[0].vnic_id
+}
+
+# Update the output to use the reserved IP
 output "instance_public_ip" {
-  value = oci_core_instance.ampere_vm.public_ip
+  value = oci_core_public_ip.reserved_ip.ip_address
+}
+
+# --- 9. RESERVED PUBLIC IP ---
+# Reserved (static) public IP
+resource "oci_core_public_ip" "reserved_ip" {
+  compartment_id = var.compartment_id
+  lifetime       = "RESERVED"
+  display_name   = "SaaS-Micro-Server-IP"
+  private_ip_id  = data.oci_core_private_ips.vm_private_ip.private_ips[0].id
 }
