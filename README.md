@@ -34,6 +34,17 @@ This project serves as a practical learning path for modern cloud infrastructure
 
 ## 4. Kubernetes (K8s): The "Orchestrator" Project
 
+- Installed **k3s** (lightweight Kubernetes) on the OCI ARM VM via `cloud-init.sh`, which runs automatically on first boot
+- Configured k3s with `--write-kubeconfig-mode=644` and `--tls-san <public_ip>` so the kubeconfig is readable and TLS certificates are valid for external connections
+- Fetched the VM's public IP at boot time from the OCI instance metadata service (`169.254.169.254`) and injected it as a TLS SAN so kubectl works from GitHub Actions
+- Created Kubernetes manifests in `k8s/`: `deployment.yaml`, `service.yaml`, and `ingress.yaml`
+- Deployed a multi-arch Docker image (`linux/amd64` + `linux/arm64`) from Docker Hub to the k3s cluster
+- Stored the kubeconfig (with public IP substituted for `127.0.0.1`) as a GitHub Actions secret (`KUBECONFIG`) for CI/CD access
+- Updated the GitHub Actions `deploy` job to write the kubeconfig, apply manifests, update the image, and wait for rollout completion
+- Migrated all VCN/subnet/security-list/route-table management into Terraform (previously used OCI Console wizard — now fully code-driven)
+- Added a **reserved (static) public IP** resource in Terraform so the VM's IP survives destroy/recreate cycles
+- Persisted iptables rules across reboots using `iptables-persistent` (OCI Ubuntu images block inbound traffic at the OS level by default)
+
 ## 5. Distributed Computing: The "Stateful vs. Stateless" Project
 
 ## Tech Stack
