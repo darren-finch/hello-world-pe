@@ -10,8 +10,8 @@ services:
       - REDIS_URL=redis://redis-svc:6379
     restart: on-failure
     depends_on:
-      - redis
-  redis:
+      - redis-svc
+  redis-svc:
     image: redis:latest
     ports:
       - "6379:6379"
