@@ -12,40 +12,40 @@ This project serves as a practical learning path for modern cloud infrastructure
 
 ## 1. Docker: The "Containerize Anything" Project
 
-- Implemented two different Dockerfiles for different deployment targets (Dockerfle.dev and Dockerfile.prod)
+- Implemented two different Dockerfiles for different deployment targets (_Dockerfle.dev_ and _Dockerfile.prod_)
 - Utilized volumes to mount local source code into the DEV container to allow hot-reloading
 - Implemented .devcontainer and .editorconfig to commoditize the developer environment
 
 ## 2. GitHub Actions: The "Automatic Gatekeeper" Project
 
 - Implemented testing and linting checks on pull request changes
-- Implemented deployment automation to build/deploy Docker image (actual deployment is not there yet, we need Terraform)
+- Implemented deployment automation to build/deploy Docker image
 
 ## 3. Terraform: The "Clickless Cloud" Project
 
-- Provisioned an OCI **Always Free** ARM VM (`VM.Standard.A1.Flex`) with 4 OCPUs and 24GB RAM using OpenTofu (the open-source Terraform fork, required since Terraform was removed from Alpine Linux's package repositories)
-- Used Ubuntu 24.04 aarch64 as the VM image, matching the ARM architecture of the A1.Flex shape
-- Configured OCI provider authentication via API key (`tenancy_ocid`, `user_ocid`, `fingerprint`, `private_key_path`)
-- Injected SSH public key via instance metadata for passwordless access as the `ubuntu` user
-- Created a **Network Security Group (NSG)** attached to the VM's VNIC with rules allowing inbound SSH (TCP 22), inbound ICMP (ping), and unrestricted egress
-- Managed the subnet's **default Security List** to mirror the NSG rules at the subnet level (both layers must allow traffic in OCI)
-- Created an **Internet Gateway** and configured the VCN's **default Route Table** with a `0.0.0.0/0` route to enable public internet access
-- Stored sensitive values (`tenancy_ocid`, key paths, OCIDs) in `terraform.tfvars`, excluded from version control via `.gitignore`
+- Provisioned an Ubuntu 24.04 aarch64 (ARM) OCI Ampere VM _(VM.Standard.A1.Flex)_ with 4 OCPUs and 24 GB of RAM
+- Provisioned a public IP resource with a runtime reference to the VM's private IP so the IP is not ephemeral (without this OCI will return the VM to the object pool after some time, resulting in the IP being invalid)
+- Provisioned a VCN (Virtual Cloud Network) named _SaaS-Micro-Server-VCN_ and corresponding subnet _SaaS-Micro-Server-Subnet_ with default route table rules
+- Provisioned an NSG attached to the VM's VNIC (Virtual Network Interface Card) with firewall rules allowing SSH, ICMP, HTTP, HTTPS, K3s API, and all egress traffic.
+- Applied same firewall rules to default Security List and applied the security list to the VCN's subnet
+- Applied routing rule to _SaaS-Micro-Server-Subnet_'s default routing table to allow all outbound traffic
+- Provisioned an Internet Gateway so the VCN has internet access
+- Used terraform.tfvars to configure secrets
+- Created a _cloud-init.sh_ Bash script which runs on VM startup initializes Docker and K3s, opens the iptables firewall rules to allow the same traffic as previously discussed, and uses the _iptables-persistent_ package to persist the iptable rules across VM restarts.
 
 ## 4. Kubernetes (K8s): The "Orchestrator" Project
 
-- Installed **k3s** (lightweight Kubernetes) on the OCI ARM VM via `cloud-init.sh`, which runs automatically on first boot
-- Configured k3s with `--write-kubeconfig-mode=644` and `--tls-san <public_ip>` so the kubeconfig is readable and TLS certificates are valid for external connections
-- Fetched the VM's public IP at boot time from the OCI instance metadata service (`169.254.169.254`) and injected it as a TLS SAN so kubectl works from GitHub Actions
-- Created Kubernetes manifests in `k8s/`: `deployment.yaml`, `service.yaml`, and `ingress.yaml`
-- Deployed a multi-arch Docker image (`linux/amd64` + `linux/arm64`) from Docker Hub to the k3s cluster
-- Stored the kubeconfig (with public IP substituted for `127.0.0.1`) as a GitHub Actions secret (`KUBECONFIG`) for CI/CD access
-- Updated the GitHub Actions `deploy` job to write the kubeconfig, apply manifests, update the image, and wait for rollout completion
-- Migrated all VCN/subnet/security-list/route-table management into Terraform (previously used OCI Console wizard — now fully code-driven)
-- Added a **reserved (static) public IP** resource in Terraform so the VM's IP survives destroy/recreate cycles
-- Persisted iptables rules across reboots using `iptables-persistent` (OCI Ubuntu images block inbound traffic at the OS level by default)
+- Created _deployment.yaml_, which specifies the labels and spec for the Pods that will run the application's Docker container. It also specifies two replicas should be created on the VM for simulated redundancy (real-world redundancy would require more nodes) and that the expected port for the app is 3000.
+- Created _ingress.yaml_, which contains routing rules for _Traefik_ so it knows which K3s Service to route traffic to. In our case we're sending incoming traffic from port 80 (HTTP) to the _hello-world-pe-svc_, which is the main Service for our application defined in service.yaml.
+- Created _service.yaml_, which defines essentially a name associated with a stable internal IP (A Service IP or _ClusterIP_) which is stored in _CoreDNS_ for Traefik to route traffic to. From there kube-proxy updates the iptables NAT config with INPUT rule for ClusterIP -> real Pod IP.
 
 ## 5. Distributed Computing: The "Stateful vs. Stateless" Project
+
+- Implemented a K3s Redis Service with a _PersistentVolume_, allowing the Redis snapshot to persist across VM reboots
+- Provised 1 gigabyte of storage to the volume
+- Updated Next.js application to have a simple routes at _/api/counter_ (GET to get current value and POST to increment).
+- Created _LEARNING_WITH_AI.md_, summarizing what I learned about learning with AI throughout this project
+- Fixed README.md to reflect what I did with Terraform and K3s in my own words, so I can understand the full picture of the components involved in the project.
 
 ## Tech Stack
 
