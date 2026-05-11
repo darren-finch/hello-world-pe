@@ -62,6 +62,8 @@ This project serves as a practical learning path for modern cloud infrastructure
 
 ## Getting Started
 
-### Run application inside DEV container
+To run the application, just navigate to the project in your host's terminal (not in the dev container) and run `docker compose up --build`.
 
-npm run dev
+To stop, Ctrl + C in the terminal window.
+
+To remove the stopped containers, run `docker compose down` or `docker compose down -v` to remove the Redis volume as well.
